@@ -17,8 +17,6 @@ This repository provides a **robust, resume-able MATLAB pipeline** to evaluate *
 DCInterconnections/
 ├─ README.md
 ├─ LICENSE
-├─ CITATION.cff
-├─ .gitignore
 ├─ matlab/
 │  └─ Flex_DC_Publish.m
 ├─ scripts/
