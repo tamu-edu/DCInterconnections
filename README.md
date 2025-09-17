@@ -33,8 +33,8 @@ DCInterconnections/
 - **YALMIP**  
 - **GUROBI** (MATLAB interface on path, e.g., `gurobi.mexa64`)  
 - Synthetic **Texas 2000-bus** case files on MATLAB path:
-  - `YOUR MATPOWER Case File` (e.g., `case2000_PWL`)
-  - `YOUR Generator cost / commitment data` (e.g., `xgd_case2000`)
+  - `YOUR MATPOWER Case File` (e.g., `DC_case2000`)
+  - `YOUR Generator cost / commitment data` (e.g., `DC_GD_case2000`)
 - Input time series (all `8760 × …` unless noted):
   - `YOUR_demand_profiles.mat` → variable `area_load` (MW, `8760 × nBus`)
   - `YOUR_wind_profiles.mat`   → variable `wind_MW`  (MW, `8760 × nWind`)
