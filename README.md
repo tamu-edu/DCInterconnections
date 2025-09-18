@@ -59,6 +59,7 @@ DCInterconnections/
 4. Run:
    ```matlab
    cd matlab
+   run('Reliability_screen.m');
    run('Flex_DC_Publish.m');
 
 ## Outputs
