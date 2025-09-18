@@ -18,7 +18,8 @@ DCInterconnections/
 ├─ README.md
 ├─ LICENSE
 ├─ matlab/
-│  └─ Flex_DC_Publish.m
+│  ├─ Flex_DC_Publish.m
+│  └─ Reliability_screen.m
 ├─ scripts/
 │  ├─ check_dependencies.m
 │  └─ hprc_submit_example.slurm
