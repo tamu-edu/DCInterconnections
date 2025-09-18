@@ -1,6 +1,6 @@
 # Flexibility-Aware, Planner-Initiated Siting to Fast-Track Data Center Interconnections
 
-This repository provides a **robust, resume-able MATLAB pipeline** to evaluate **1-GW data-center deployments** at candidate buses under **standardized flexibility envelopes** (Firm, Pause, Shift). The workflow follows a **planner-initiated, reliability-gated siting** approach: candidate nodes are screened for **N–1 feasibility**, then **system-wide market impacts** are quantified via day-ahead SCUC and intra-day SCED, producing per-bus metrics for transparent shortlisting.
+This repository provides a **robust, resume-able MATLAB pipeline** to evaluate **1-GW data-center deployments** at candidate buses under **standardized flexibility envelopes** (Firm, Pause, Shift). The workflow follows a **planner-initiated, reliability-gated siting** approach: candidate nodes are screened for **N–1 feasibility** (can be extended to N-k reliability according to user needs), then **system-wide market impacts** are quantified via day-ahead SCUC and intra-day SCED, producing per-bus metrics for transparent shortlisting.
 
 > **Highlights (research-aligned)**
 > - **Planner-initiated siting.** Pre-defined operating envelopes and a vetted shortlist **before queue entry** to enable fast-track interconnection.
