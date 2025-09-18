@@ -41,7 +41,7 @@ DCInterconnections/
   - `YOUR_wind_profiles.mat`   → variable `wind_MW`  (MW, `8760 × nWind`)
   - `YOUR_solar_profiles.mat`  → variable `solar_MW` (MW, `8760 × nSolar`)
   - `YOUR_hydro_profiles.mat`  → variable `hydro_MW` (MW, `8760 × nHydro`)
-  - `YOUR_reliability.mat`     → vector of bus IDs that **pass the reliability gate**
+  - `YOUR_reliability.mat`     → vector of bus IDs that **pass the reliability gate**, generated from Reliability_screen.m
 
 > ⚠️ **Paths:** Replace `YOUR_…` placeholders in the MATLAB script and point to locations you control.
 
