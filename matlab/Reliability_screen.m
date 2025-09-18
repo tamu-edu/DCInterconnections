@@ -155,7 +155,7 @@ extra_load_buses_list = filtered_bus_info.BusNum + 3000000; %to match the defaul
 capacity_list = [300, 500, 640, 680, 800, 1000, 1280, 1360, 1600, 2000]; %or other capacities concerned
 
 
-output_csv = sprintf('reliability_screening_results.csv');
+% output_csv = sprintf('reliability_screening_results.csv');
 result_per_bus = cell(length(extra_load_buses_list), 1);
 results_gen_per_bus = cell(length(extra_load_buses_list), 1);
 
@@ -396,30 +396,35 @@ end
 %Users can set the N-k contingencies of concerns and similarly calculate
 %the N-k reliability results
 
-
+%
+%
+%
 
 
 
 % Create summary
-summary_table = table();
-summary_table.Bus = extra_load_buses_list(:);
+threshold_pr = 0.95;
+output_mat = sprintf('reliability.mat');
+conv_rate_mat = nan(length(extra_load_buses_list), length(capacity_list));
+qualified_buses = cell(1, length(capacity_list));
 
 for cap_i = 1:length(capacity_list)
-    conv_rate = zeros(length(extra_load_buses_list), 1);
-
     for j_bus = 1:length(extra_load_buses_list)
         if isempty(result_per_bus{j_bus}) || isempty(result_per_bus{j_bus}{cap_i})
-            conv_rate(j_bus) = 1;
+            conv_rate_mat(j_bus, cap_i) = 1; 
         else
             res = result_per_bus{j_bus}{cap_i};
-            conv_rate(j_bus) = dc_converged_count/n_valid_ctgs;
+            conv_rate_mat(j_bus, cap_i) = res.dc_converged_count / n_valid_ctgs;
         end
     end
-    summary_table.(sprintf('%dMW', capacity_list(cap_i))) = round(conv_rate, 3);
-end
 
-writetable(summary_table, output_csv);
-fprintf('\nSaved result to %s\n', output_csv);
+    idx_ok = conv_rate >= threshold_pr;
+    qualified_buses{cap_i} = extra_load_buses_list(idx_ok);
+end
+conv_rate_mat = round(conv_rate_mat, 3);
+
+save(output_mat, 'qualified_buses', 'capacity_list', '-v7.3');
+fprintf('\nSaved qualified buses to %s\n', output_mat);
 
 
 elapsed_time = toc(t_start);
