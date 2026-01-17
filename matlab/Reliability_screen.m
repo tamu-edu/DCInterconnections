@@ -1,16 +1,18 @@
 
+mpdir = '/Matpower/matpower';
+addpath(genpath(mpdir));
 
 %clear all; clc;
 t_start = tic;
 
 %load case file
-mpc_base      = loadcase('YOUR MATPOWER Case File');
+mpc_base      = loadcase('DC_case2000.m');
 
 %load annual demand, wind, solar, hydro profiles
-D = load('YOUR_demand_profiles.mat');   area_load_arr = D.area_load;   clear D
-W = load('YOUR_wind_profiles.mat');     wind_arr      = W.wind_MW;     wind_bus = W.wind_bus; clear W
-S = load('YOUR_solar_profiles.mat');    solar_arr     = S.solar_MW;    solar_bus = S.solar_bus; clear S
-H = load('YOUR_hydro_profiles.mat');    hydro_arr     = H.hydro_MW;    hydro_bus = H.hydro_bus; clear H
+D = load('/data/texas_2020_demand.mat');   area_load_arr = D.area_load;   clear D
+W = load('/data/texas_2020_wind.mat');     wind_arr      = W.wind_MW;     wind_bus = W.wind_bus; clear W
+S = load('/data/texas_2020_solar.mat');    solar_arr     = S.solar_MW;    solar_bus = S.solar_bus; clear S
+H = load('/data/texas_2020_hydro.mat');    hydro_arr     = H.hydro_MW;    hydro_bus = H.hydro_bus; clear H
 
 
 fprintf('===== Starting N-1 OPF Contingency Analysis =====\n');
@@ -47,15 +49,15 @@ total_online_pmin = sum(online_pmin);
 total_online_pmax = sum(online_pmax);
 
 % Display gen results
-fprintf('Total generators: %d\n', length(mpc_full.gen(:,1)));
-fprintf('Online generators: %d\n', n_online);
-fprintf('Offline generators: %d\n', n_offline);
-fprintf('Total PMAX of online generators: %.2f MW\n', total_online_pmax);
+% fprintf('Total generators: %d\n', length(mpc_full.gen(:,1)));
+% fprintf('Online generators: %d\n', n_online);
+% fprintf('Offline generators: %d\n', n_offline);
+% fprintf('Total PMAX of online generators: %.2f MW\n', total_online_pmax);
 
 
 
 % Select target day(s) and hour(s) for reliability assessment (e.g. peak day, peak hour)
-Days = 224; %peak day, add other concerned days
+Days = 226; %peak day, add other concerned days
 hrs = 16; %peak hour, add other concerned hours
 
 %the set of concerning hours 
@@ -64,6 +66,7 @@ selected_hours = (Days-1).*24 + hrs;
 
 mpc_hour = mpc_full;
 % mpc_hour.bus(:, PD) = area_load_arr(selected_hour, :)';
+load_factor = 0.96; %%%
 
 % total_load = sum(mpc_hour.bus(:, PD));
 % fprintf('Total load at hour %d: %.2f MW\n', selected_hour, total_load);
@@ -83,8 +86,8 @@ all_idx = (1:ng)';
 renewable_idx = unique([wind_idx; solar_idx; hydro_idx]);
 conventional_idx = setdiff(all_idx, renewable_idx);
 
-fprintf('Renewable generators: %d\n', length(renewable_idx));
-fprintf('Conventional generators: %d\n', length(conventional_idx));
+% fprintf('Renewable generators: %d\n', length(renewable_idx));
+% fprintf('Conventional generators: %d\n', length(conventional_idx));
 
 
 %N-1 contingencies
@@ -130,8 +133,8 @@ for i = 1:n_branch
     end
 end
 
-fprintf('Total branches: %d\n', n_branch);
-fprintf('Non-islanding N-1 cases: %d\n', numel(valid_branch_indices));
+% fprintf('Total branches: %d\n', n_branch);
+% fprintf('Non-islanding N-1 cases: %d\n', numel(valid_branch_indices));
 n_valid_ctgs = length(valid_branch_indices);
 
 
@@ -143,7 +146,7 @@ n_valid_gen_ctgs = length(valid_gen_indices);
 
 
 %locations to be scanned
-bus_info = readtable('bus_info.csv'); %detailed bus information
+bus_info = readtable('/data/bus_info.csv'); %detailed bus information
 
 is_bus = (bus_info.BusNomVolt == 115) | (bus_info.BusNomVolt == 161) | (bus_info.BusNomVolt == 230);
 filtered_bus_info = bus_info(is_bus, :);
@@ -161,6 +164,11 @@ results_gen_per_bus = cell(length(extra_load_buses_list), 1);
 
 
 %parallel computing pool configurations
+scratch_dir = '/matlabtmp'; 
+if ~exist(scratch_dir, 'dir')
+    mkdir(scratch_dir);
+end
+
 cluster = parcluster('local');
 cluster.JobStorageLocation = scratch_dir;
 parpool(cluster, str2double(getenv('SLURM_CPUS_PER_TASK')));
@@ -177,11 +185,13 @@ for j = 1:length(extra_load_buses_list)
 
     for cap_idx = 1:length(capacity_list)
         additional_mw = capacity_list(cap_idx);
-        fprintf('-> Capacity %d MW\n', additional_mw);
+        fprintf('-> Capacity %d MW\n', additional_mw/0.8);
         
         n_selected_hours = length(selected_hours);
         shed_values = nan(n_valid_ctgs, n_selected_hours);
         shed_flags = false(n_valid_ctgs, n_selected_hours);
+
+        selected_hour = selected_hours(1); %%%
             
         mpc_hour = mpc_full;
         mpc_hour.bus(:, PD) = area_load_arr(selected_hour, :)' * load_factor;
@@ -191,7 +201,7 @@ for j = 1:length(extra_load_buses_list)
         else
             mpc_hour.bus(row_idx, PD) = mpc_hour.bus(row_idx, PD) + additional_mw;
         end
-        mpc_hour.bus(:, QD) = mpc_hour.bus(:, PD) * tan(theta);
+        % mpc_hour.bus(:, QD) = mpc_hour.bus(:, PD) * tan(theta); %%%
     
         mpc_hour.gen(wind_idx, PMAX) = wind_arr(selected_hour, :)';
         mpc_hour.gen(solar_idx, PMAX) = solar_arr(selected_hour, :)';
@@ -202,7 +212,7 @@ for j = 1:length(extra_load_buses_list)
         to_run_mask = converged_ctg_mask;
         ctg_list_to_run = valid_branch_indices(to_run_mask);
         n_run = length(ctg_list_to_run);
-        fprintf('n_run: %d', n_run);
+        % fprintf('n_run: %d', n_run);
     
         local_converged = false(1, n_run);
         local_failed_mask = false(1, n_run);
@@ -280,14 +290,14 @@ end
 %gen
 for j = 1:length(extra_load_buses_list)
     bus = extra_load_buses_list(j);
-    fprintf('-> Bus %d \n', bus);
+    % fprintf('-> Bus %d \n', bus);
     
     converged_ctg_mask = true(1, n_valid_gen_ctgs);
     results_gen_per_bus{j} = cell(length(capacity_list), 1);
 
     for cap_idx = 1:length(capacity_list)
         additional_mw = capacity_list(cap_idx);
-        fprintf('-> Capacity %d MW\n', additional_mw);
+        % fprintf('-> Capacity %d MW\n', additional_mw);
         
         n_selected_hours = length(selected_hours);
         shed_values = nan(n_valid_gen_ctgs, n_selected_hours);
@@ -303,7 +313,7 @@ for j = 1:length(extra_load_buses_list)
         else
             mpc_hour.bus(row_idx, PD) = mpc_hour.bus(row_idx, PD) + additional_mw;
         end
-        mpc_hour.bus(:, QD) = mpc_hour.bus(:, PD) * tan(theta);
+        % mpc_hour.bus(:, QD) = mpc_hour.bus(:, PD) * tan(theta);
     
         mpc_hour.gen(wind_idx, PMAX) = wind_arr(selected_hour, :)';
         mpc_hour.gen(solar_idx, PMAX) = solar_arr(selected_hour, :)';
@@ -313,7 +323,7 @@ for j = 1:length(extra_load_buses_list)
         to_run_mask = converged_ctg_mask;
         ctg_list_to_run = valid_gen_indices(to_run_mask);
         n_run = length(ctg_list_to_run);
-        fprintf('n_run: %d', n_run);
+        % fprintf('n_run: %d', n_run);
     
         local_converged = false(1, n_run);
         local_failed_mask = false(1, n_run);
@@ -386,7 +396,7 @@ for j = 1:length(extra_load_buses_list)
             'shed_count', shed_count, ...
             'shed_avg', avg_shed);
 
-        fprintf('===== Completed N-1 OPF Contingency Analysis =====\n');
+        % fprintf('===== Completed N-1 OPF Contingency Analysis =====\n');
     end
 end
 
@@ -396,9 +406,7 @@ end
 %Users can set the N-k contingencies of concerns and similarly calculate
 %the N-k reliability results
 
-%
-%
-%
+
 
 
 
@@ -418,17 +426,27 @@ for cap_i = 1:length(capacity_list)
         end
     end
 
+    conv_rate = conv_rate_mat(:, cap_i); %%% 
     idx_ok = conv_rate >= threshold_pr;
     qualified_buses{cap_i} = extra_load_buses_list(idx_ok);
+
+    qualified_busnum = qualified_buses{cap_i} - 3000000;
+    [tf, loc] = ismember(qualified_busnum, bus_info.BusNum);
+    assert(all(tf), 'Some BusNum not found in bus_info');
+    qualified_buses{cap_i} = bus_info.Bus(loc);
 end
 conv_rate_mat = round(conv_rate_mat, 3);
 
-save(output_mat, 'qualified_buses', 'capacity_list', '-v7.3');
+% save(output_mat, 'qualified_buses', 'capacity_list', '-v7.3');
+cap_i = 1;  %%%
+reliability = qualified_buses{cap_i};      %%%
+reliability = reliability(:); %%%
+save(output_mat, 'reliability', '-v7.3'); %%%
 fprintf('\nSaved qualified buses to %s\n', output_mat);
 
 
 elapsed_time = toc(t_start);
-fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
+% fprintf('Elapsed time: %.4f seconds\n', elapsed_time);
 
 
 
